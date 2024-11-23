@@ -52,7 +52,7 @@ export class AppController {
     return { result: await this.appService.getVotes(address) };
   }
   
-  @Post('delegate-votes')
+  @Post('delegate-votes/:address')
   async delegateVotes(@Body() body: { address: string }) {
     const result = await this.appService.delegateVotes(body.address);
     return { result };
