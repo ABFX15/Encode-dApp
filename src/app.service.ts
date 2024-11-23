@@ -89,17 +89,29 @@ export class AppService {
     });
     return `The address ${address} ${hasRole ? "has" : "does not have"} the role ${MINTER_ROLE}`;
   }
+  
+  async getVotes(address: string): Promise<string>{
+    const votes = await this.publicClient.readContract({
+      address: this.getContractAddress(),
+      abi: tokenJson.abi,
+      functionName: "getVotes",
+      args: [address],
+    });
+    return formatEther(votes as bigint);
+  }
 
-  async mintTokens(address: Address): Promise<any> {
+  async mintTokens(address: string): Promise<any> {
     const minterRole = await this.checkMinterRole(this.walletClient.account.address);
     const mintTx = await this.walletClient.writeContract({
+      address: this.getContractAddress(),
+      abi: tokenJson.abi,
       functionName: "mint",
       args: [address, parseEther("100")],
     });
     const receiptTx = await this.getTransactionReceipt(mintTx.hash);
     const [balance, votes] = await Promise.all([
       this.getBalanceOf(address),
-      this.getBalanceOf(this.walletClient.account.address),
+      this.getVotes(address),
     ]);
     console.log(`Minted 100 tokens to ${address}. New balance: ${balance}. Server balance: ${votes}`);
     return {
@@ -111,13 +123,25 @@ export class AppService {
     };
   }
 
-  async getVotes(address: string): Promise<string>{
-    const votes = await this.publicClient.readContract({
+  async delegateVotes(address: string): Promise<string> {
+    const delegateTx = await this.walletClient.writeContract({
       address: this.getContractAddress(),
       abi: tokenJson.abi,
-      functionName: "votes",
+      functionName: "delegate",
       args: [address],
     });
-    return votes as string;
+    const receiptTx = await this.publicClient.waitForTransactionReceipt({ hash: delegateTx });
+    return `Delegated votes to ${address}. Transaction hash: ${delegateTx}`;
   }
+
+  async getPastVotes(address: string, blockNumber: number): Promise<string> {
+    const pastVotes = await this.publicClient.readContract({
+      address: this.getContractAddress(),
+      abi: tokenJson.abi,
+      functionName: "getPastVotes",
+      args: [address, BigInt(blockNumber)],
+    });
+    return formatEther(pastVotes as bigint);
+  }
+
 }

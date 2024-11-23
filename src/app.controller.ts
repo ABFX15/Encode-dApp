@@ -4,11 +4,11 @@ import { MintTokenDto } from './dtos/MintToken.dto';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) { }
 
   @Get('contract-address')
   getContractAddress() {
-    return {result: this.appService.getContractAddress()};
+    return { result: this.appService.getContractAddress() };
   }
 
   @Get('token-name')
@@ -48,7 +48,19 @@ export class AppController {
   }
 
   @Get('get-votes')
-  async getVotes(@Param ('address') address: string) {
+  async getVotes(@Param('address') address: string) {
     return { result: await this.appService.getVotes(address) };
+  }
+  
+  @Post('delegate-votes')
+  async delegateVotes(@Body() body: { address: string }) {
+    const result = await this.appService.delegateVotes(body.address);
+    return { result };
+  }
+
+  @Get('get-past-votes/:address')
+  async getPastVotes(@Param('address') address: string, @Query('blockNumber') blockNumber: string) {
+    const newBlockNumber = Number(blockNumber);
+    return { result: await this.appService.getPastVotes(address, newBlockNumber) };
   }
 }
